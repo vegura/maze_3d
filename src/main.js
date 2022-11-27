@@ -1,5 +1,6 @@
-
 // object are in the scene
+
+const gameObj = new Game();
 
 function init() {
 	const scene = new THREE.Scene();
@@ -10,30 +11,39 @@ function init() {
 	// box1.position.x = 1;
 	const boxGroup = createBoxGrid(13, 1.5);
 
-	const plane1 = createPlane(20);
+	const plane1 = createPlane(25);
 	plane1.name = "plane-1";
 	plane1.rotation.x = Math.PI / 2;
 
 	const sphere = createSphere(0.05);
 
 	// const light = createPointLight(1);
-	const light = createSpotLight(1);
+	// const light = createSpotLight(1);
+	const light = createDirectionalLight(1);
+	const ambientLight = createAmbientLight(1);
+
 	light.position.y = 1.25;
 	light.intensity = 2;
 
 	const helper = new THREE.CameraHelper(light.shadow.camera);
 
+	light.position.x = 13;
+	light.position.y = 10;
+	light.position.z = 10;
+	light.intensity = 2;
+
 	gui.add(light, "intensity", -10, 10);
 	gui.add(light.position, "x", -10, 10);
 	gui.add(light.position, "y", -10, 10);
 	gui.add(light.position, "z", -10, 10);
-	gui.add(light, "penumbra", 0, 1);
+	gui.add(ambientLight, "intensity", 0, 1);
+	// gui.add(light, "penumbra", 0, 1);
 	
 	scene.add(plane1);
-	// scene.add(box1);
 	scene.add(boxGroup);
 	scene.add(light);
-	light.add(sphere);
+	scene.add(ambientLight);
+	// light.add(sphere);
 	scene.add(helper);
 
 	const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
@@ -60,6 +70,27 @@ function createSpotLight(intensity) {
 	light.castShadow = true;
 	light.shadow.bias = 0.001;
 
+	light.shadow.mapSize.width = 1840;
+	light.shadow.mapSize.height = 1080;
+
+	return light;
+}
+
+function createAmbientLight(intensity) {
+	const light = new THREE.AmbientLight("rgb(10, 30, 50)", intensity);
+	return light;
+}
+
+function createDirectionalLight(intensity) {
+	const light = new THREE.DirectionalLight(0xfffff, intensity);
+	light.castShadow = true;
+
+	light.shadow.camera.left = -15;
+	light.shadow.camera.right = 15;
+	light.shadow.camera.top = 15;
+	light.shadow.camera.bottom = -15;
+
+	light.shadow.bias = 0.001;
 	light.shadow.mapSize.width = 1840;
 	light.shadow.mapSize.height = 1080;
 
