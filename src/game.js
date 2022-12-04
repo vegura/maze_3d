@@ -1,29 +1,36 @@
 class Game {
-	constructor() {
-		this.FIELD_SIZE = 10;
-		this.CELL_SIZE = 1;
-		this.gameField = [];
+	constructor(fieldSize) {
+		this.fieldSize = fieldSize;
+		// create field
+		this.gameFieldModel = this.createField(this.fieldSize, this.fieldSize, 1);
 	}
 
 	/*
 	1 - wall
 	0 - hole
+	field ->
 	[
-	[1, 1, 1, 1, 1],
-	[1, 0, 1, 1, 1],
-	[1, 0, 1, 1, 1],
-	[1, 0, 0, 0, 1],
-	[1, 1, 1, 1, 1],
+		row ->	[0,0,0]
+		row -> 	[0,0,0]
+		row ->  [0,0,0]
 	]
 
 	*/
-	createField() {
-		for (let i = 0; i < this.FIELD_SIZE; i++) {
-			const row = [];
-			for (let j = 0; j < this.FIELD_SIZE; j++) {
-				row.push(1);
-			}
-			this.gameField.push(row);
+
+	createField(rows, cols, value) {
+		const field = [];
+		for (let i = 0; i < rows; i++) {
+			const createdRow = this.createRow(cols, value);
+			field.push(createdRow);			
 		}
+	}
+
+	createRow(size, value) {
+		const row = [];
+		for (let i = 0; i < size; i++) {
+			// insert value into the row
+			row.push(value);
+		}
+		return row;
 	}
 }
