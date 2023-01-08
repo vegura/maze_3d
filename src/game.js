@@ -4,6 +4,7 @@ class Game {
 		// create field
 		this.gameFieldModel = this.createField(this.fieldSize, this.fieldSize, 1);
 		this.generateMaze();
+		this.player = new Player(this.gameFieldModel);
 	}
 
 	/*

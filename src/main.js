@@ -1,8 +1,10 @@
 const game = new Game(21);
+document.onkeydown = getPressed;
 
 function init() {
 	const scene = new THREE.Scene();
 	const gui = new dat.GUI();
+	const clock = new THREE.Clock();
 
 	let enableFog = false;
 
@@ -11,12 +13,13 @@ function init() {
 	}
 
 	const plane = getPlane(30);
-	const pointLight = getPointLight(1);
 	// const light = getSpotLight(1);
 	const light = getDirectionalLight(2);
-	const sphere = getSphere(0.05);
 	// const boxGrid = getBoxGrid(7, 1.5);
+	const player = getPlayer();
 	const boxGrid = getGameField();
+	boxGrid.name = "gameField";
+
 	const helper = new THREE.CameraHelper(light.shadow.camera);
 	const ambientLight = getAmbientLight(1.5);
 
@@ -28,10 +31,6 @@ function init() {
 	light.position.z = 10;
 	light.intensity = 2;
 
-	pointLight.position.y = 0.5;
-	pointLight.position.x = -5;
-	pointLight.position.z = -3;
-
 	gui.add(light, "intensity", 0, 10);
 	gui.add(light.position, "x", -5, 5);
 	gui.add(light.position, "y", 0, 100);
@@ -41,11 +40,11 @@ function init() {
 
 	scene.add(plane);
 	scene.add(boxGrid);
-	pointLight.add(sphere);
+	
 	scene.add(light);
 	scene.add(helper);
 	scene.add(ambientLight);
-	scene.add(pointLight);
+	scene.add(player);
 
 	const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
 
@@ -63,9 +62,20 @@ function init() {
 
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-	update(renderer, scene, camera, controls);
+	update(renderer, scene, camera, controls, clock);
 	
 	return scene;
+}
+
+function getPressed(event) {
+	console.log("Button is pressed");
+	if (event.keyCode == "40") { // down
+		console.log("Button down is pressed");
+		game.player.goDown();
+
+	} else if (event.keyCode == "41") {
+
+	}
 }
 
 function getPointLight(intensity) {
@@ -134,13 +144,25 @@ function getPlane(size) {
 	return mesh;
 }
 
-function update(renderer, scene, camera, controls) {
+function update(renderer, scene, camera, controls, clock) {
 	renderer.render(scene, camera);
 
 	controls.update();
 
+	const timeElapsed = clock.getElapsedTime();
+	const gameField = scene.getObjectByName("gameField");
+	gameField.children.forEach(function(child, index) {
+		child.scale.y = Math.sin(timeElapsed + index) + 2;
+		child.position.y = child.scale.y / 2;
+	});
+
+	const player = scene.getObjectByName("player");
+	player.position.y = 0.5;
+	player.position.x = game.player.position[0] - ((game.fieldSize - 1)) / 2;
+	player.position.z = game.player.position[1] - ((game.fieldSize - 1)) / 2;
+
 	requestAnimationFrame(function() {
-		update(renderer, scene, camera, controls);
+		update(renderer, scene, camera, controls, clock);
 	});
 }
 
@@ -184,6 +206,19 @@ function getGameField() {
 	gameField.position.z = -((game.fieldSize - 1) * separationMultiplier) / 2;
 
 	return gameField;
+}
+
+function getPlayer() {
+	const pointLight = getPointLight(1);
+	pointLight.name = "player";
+	const sphere = getSphere(0.05);
+	pointLight.add(sphere);
+
+	pointLight.position.y = 0.5;
+	pointLight.position.x = game.player.position[0] - ((game.fieldSize - 1)) / 2;
+	pointLight.position.z = game.player.position[1] - ((game.fieldSize - 1)) / 2;
+
+	return pointLight;
 }
 
 const scene = init();
