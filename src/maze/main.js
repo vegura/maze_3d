@@ -15,6 +15,7 @@ function init() {
 	const plane = getPlane(30);
 	// const light = getSpotLight(1);
 	const light = getDirectionalLight(2);
+	light.name = "dayLight";
 	// const boxGrid = getBoxGrid(7, 1.5);
 	const player = getPlayer();
 	const boxGrid = getGameField();
@@ -57,7 +58,8 @@ function init() {
 	const renderer = new THREE.WebGLRenderer();
 	renderer.shadowMap.enabled = true;
 	renderer.setSize(window.innerWidth, window.innerHeight);
-	renderer.setClearColor("rgb(120, 120, 120)");
+	// renderer.setClearColor("rgb(120, 120, 120)");
+	renderer.setClearColor("#252525");
 	document.getElementById("webgl").appendChild(renderer.domElement);
 
 	const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -65,17 +67,6 @@ function init() {
 	update(renderer, scene, camera, controls, clock);
 	
 	return scene;
-}
-
-function getPressed(event) {
-	console.log("Button is pressed");
-	if (event.keyCode == "40") { // down
-		console.log("Button down is pressed");
-		game.player.goDown();
-
-	} else if (event.keyCode == "41") {
-
-	}
 }
 
 function getPointLight(intensity) {
@@ -102,14 +93,41 @@ function getDirectionalLight(intensity) {
 	return light;
 }
 
-function getBox(w, h, d) {
-	const geometry = new THREE.BoxGeometry(w,h,d);
-	const material = new THREE.MeshPhongMaterial({
-		color: "rgb(120, 120, 120)"
-	});
+function getMaterial(type, color) {
+	var material;
+	var materialOptions = {
+		color: (color === undefined) ? "rgb(255, 255, 255)" : color,
+	}
+
+	if (type == "basic") {
+		material = new THREE.MeshBasicMaterial(materialOptions);
+	} else if (type == "lambert") {
+		material = new THREE.MeshLambertMaterial(materialOptions);
+	} else if (type == "phong") {
+		material = new THREE.MeshPhongMaterial(materialOptions);
+	} else if (type == "standart") {
+		material = new THREE.MeshStandardMaterial(materialOptions);
+	} else {
+		material = new THREE.MeshBasicMaterial(materialOptions);
+	}
+
+	return material;
+}
+
+function getBoxMat(material, w, h, d) {
+	const geometry = new THREE.BoxGeometry(w, h, d);
 	const mesh = new THREE.Mesh(geometry, material);
 	mesh.castShadow = true;
 
+	return mesh;
+} 
+
+function getBox(w, h, d) {
+	const material = new THREE.MeshPhongMaterial({
+		// color: "rgb(120, 120, 120)"
+		color: "#252525",
+	});
+	const mesh = getBoxMat(material, w, h, d);
 	return mesh;
 }
 
@@ -133,17 +151,27 @@ function getSpotLight(intencity) {
 	return light;
 }
 
-function getPlane(size) {
+function getPlaneMat(material, size) {
 	const geometry = new THREE.PlaneGeometry(size, size);
-	const material = new THREE.MeshPhongMaterial({
-		color: "rgb(120, 120, 120)", 
-		side: THREE.DoubleSide
-	});
 	const mesh = new THREE.Mesh(geometry, material);
 	mesh.receiveShadow = true;
+
 	return mesh;
 }
 
+function getPlane(size) {
+	const material = new THREE.MeshPhongMaterial({
+		// color: "rgb(120, 120, 120)", 
+		color: "#252525",
+		side: THREE.DoubleSide
+	});
+	const mesh = getPlaneMat(material, size);
+
+	return mesh;
+}
+
+let intDiff = 0.005;
+let yDiff = 0.025;
 function update(renderer, scene, camera, controls, clock) {
 	renderer.render(scene, camera);
 
@@ -158,12 +186,54 @@ function update(renderer, scene, camera, controls, clock) {
 
 	const player = scene.getObjectByName("player");
 	player.position.y = 0.5;
-	player.position.x = game.player.position[0] - ((game.fieldSize - 1)) / 2;
-	player.position.z = game.player.position[1] - ((game.fieldSize - 1)) / 2;
+	// player.position.x = game.player.position[0] - ((game.fieldSize - 1)) / 2;
+	// player.position.z = game.player.position[1] - ((game.fieldSize - 1)) / 2;
+
+	// console.log("Position is: ", player.position.x)
+	if (player.position.x < game.player.position[0] - ((game.fieldSize - 1)) / 2 && diffX(player) < -0.05) {
+		player.position.x += 0.05;
+	} else if (player.position.x > game.player.position[0] - ((game.fieldSize - 1)) / 2 && diffX(player) > 0.05) {
+		player.position.x -= 0.05;
+	}
+
+	if (player.position.z < game.player.position[1] - ((game.fieldSize - 1)) / 2 && diffZ(player) < -0.05) {
+		player.position.z += 0.05;
+	} else if (player.position.z > game.player.position[1] - ((game.fieldSize - 1)) / 2 && diffZ(player) > 0.05) {
+		player.position.z -= 0.05;
+	}
+
+	const dayLight = scene.getObjectByName("dayLight");
+	intDiff = updateLightInt(dayLight, intDiff);
+	yDiff = updateLightY(dayLight, yDiff);
 
 	requestAnimationFrame(function() {
 		update(renderer, scene, camera, controls, clock);
 	});
+}
+
+function updateLightY(light, diff) {
+	light.position.y += diff;
+	if (light.position.y > 100 || light.position.y < 0) {
+		diff = -diff;
+	}
+
+	return diff;
+}
+
+function updateLightInt(light, diff) {
+	light.intensity += diff;
+	if (light.intensity > 2 || light.intensity < 0) {
+		diff = -diff;
+	}
+	return diff;
+}
+
+function diffX(player) {
+	return player.position.x - (game.player.position[0] - ((game.fieldSize - 1)) / 2);
+}
+
+function diffZ(player) {
+	return player.position.z - (game.player.position[1] - ((game.fieldSize - 1)) / 2);
 }
 
 function getBoxGrid(amount, separationMultiplier) {
@@ -171,7 +241,9 @@ function getBoxGrid(amount, separationMultiplier) {
 
 	for (let i = 0; i < amount; i++) {
 		for (let j = 0; j < amount; j++) {
-			const box = getBox(1, 1, 1);
+			// const box = getBox(1, 1, 1);
+			// const box = getBoxMat(getMaterial("basic"), 
+				// 1, 1, 1);
 			box.position.x = i * separationMultiplier;
 			box.position.y = box.geometry.parameters.height / 2;
 			box.position.z = j * separationMultiplier;
@@ -194,6 +266,7 @@ function getGameField() {
 		for (let j = 0; j < game.fieldSize; j++) {
 			if (game.gameFieldModel[i][j] == 1) {
 				const box = getBox(1, 1.7, 1);
+				// const box = getBoxMat(getMaterial("phong", "rgb(130, 130, 130)"),1, 1.7, 1);
 				box.position.x = i * separationMultiplier;
 				box.position.y = box.geometry.parameters.height / 2;
 				box.position.z = j * separationMultiplier;
@@ -206,6 +279,18 @@ function getGameField() {
 	gameField.position.z = -((game.fieldSize - 1) * separationMultiplier) / 2;
 
 	return gameField;
+}
+
+function getPressed(event) {
+	if (event.keyCode == "40") {
+		game.player.goDown();
+	} else if (event.keyCode == "37") {
+		game.player.goLeft();
+	} else if (event.keyCode == "39") {
+		game.player.goRight();
+	} else if (event.keyCode == "38") {
+		game.player.goUp();
+	}
 }
 
 function getPlayer() {

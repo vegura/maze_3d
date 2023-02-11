@@ -17,14 +17,14 @@ class Player {
 	}
 
 	goLeft() {
-		if (this.gameField[this.position[0] + 1][this.position[1]] == 0) {
-			this.position = [this.position[0] + 1, this.position[1]];
+		if (this.gameField[this.position[0] - 1][this.position[1]] == 0) {
+			this.position = [this.position[0] - 1, this.position[1]];
 		}
 	}
 
 	goRight() {
-		if (this.gameField[this.position[0] - 1][this.position[1]] == 0) {
-			this.position = [this.position[0] - 1, this.position[1]];
+		if (this.gameField[this.position[0] + 1][this.position[1]] == 0) {
+			this.position = [this.position[0] + 1, this.position[1]];
 		}
 	}
 }
