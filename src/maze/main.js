@@ -1,4 +1,5 @@
-const game = new Game(21);
+const fieldSize = 27;
+const game = new Game(fieldSize);
 document.onkeydown = getPressed;
 
 function init() {
@@ -12,12 +13,15 @@ function init() {
 		scene.fog = new THREE.FogExp2(0xffffff, 0.2);
 	}
 
-	const plane = getPlane(30);
+	const plane = getPlane(fieldSize + 1);
 	// const light = getSpotLight(1);
 	const light = getDirectionalLight(2);
 	light.name = "dayLight";
 	// const boxGrid = getBoxGrid(7, 1.5);
 	const player = getPlayer();
+
+	const mob = getMob();
+
 	const boxGrid = getGameField();
 	boxGrid.name = "gameField";
 
@@ -39,9 +43,10 @@ function init() {
 	gui.add(ambientLight, "intensity", 0, 10);
 	// gui.add(light, "penumbra", 0, 1);
 
+	scene.add(mob);
 	scene.add(plane);
 	scene.add(boxGrid);
-	
+
 	scene.add(light);
 	scene.add(helper);
 	scene.add(ambientLight);
@@ -69,9 +74,15 @@ function init() {
 	return scene;
 }
 
-function getPointLight(intensity) {
-	const light = new THREE.PointLight( 0xffffff, intensity);
-	light.castShadow = true;
+function getPointLight(intensity, color) {
+	let light;
+	if (color == undefined) {
+		light = new THREE.PointLight( 0xffffff, intensity);
+	} else {
+		light = new THREE.PointLight(color, intensity);
+	}
+
+	// light.castShadow = true;
 
 	return light;
 }
@@ -107,17 +118,27 @@ function getMaterial(type, color) {
 		material = new THREE.MeshPhongMaterial(materialOptions);
 	} else if (type == "standart") {
 		material = new THREE.MeshStandardMaterial(materialOptions);
+	} else if (type == "glass") {
+		material = new THREE.MeshPhysicalMaterial({
+			roughness: 0.4,
+			transmission: 1,
+			thickness: 0.0,
+		});
 	} else {
 		material = new THREE.MeshBasicMaterial(materialOptions);
-	}
+	} 
 
 	return material;
 }
 
+
 function getBoxMat(material, w, h, d) {
 	const geometry = new THREE.BoxGeometry(w, h, d);
 	const mesh = new THREE.Mesh(geometry, material);
-	mesh.castShadow = true;
+
+	if (typeof material !== THREE.MeshPhysicalMaterial) {
+		// mesh.castShadow = true;
+	}
 
 	return mesh;
 } 
@@ -173,7 +194,7 @@ function getPlane(size) {
 let intDiff = 0.005;
 let yDiff = 0.025;
 function update(renderer, scene, camera, controls, clock) {
-	renderer.render(scene, camera);
+	renderer.render(scene, camera);	
 
 	controls.update();
 
@@ -265,8 +286,8 @@ function getGameField() {
 	for (let i = 0; i < game.fieldSize; i++) {
 		for (let j = 0; j < game.fieldSize; j++) {
 			if (game.gameFieldModel[i][j] == 1) {
-				const box = getBox(1, 1.7, 1);
-				// const box = getBoxMat(getMaterial("phong", "rgb(130, 130, 130)"),1, 1.7, 1);
+				// const box = getBox(1, 1.7, 1);
+				const box = getBoxMat(getMaterial("glass", "rgb(130, 130, 130)"),1, 1.7, 1);
 				box.position.x = i * separationMultiplier;
 				box.position.y = box.geometry.parameters.height / 2;
 				box.position.z = j * separationMultiplier;
@@ -291,6 +312,19 @@ function getPressed(event) {
 	} else if (event.keyCode == "38") {
 		game.player.goUp();
 	}
+}
+
+function getMob() {
+	const pointLight = getPointLight(1, "#f54275");
+	pointLight.name = "mob";
+	const sphere = getSphere(0.05);
+	pointLight.add(sphere);
+
+	pointLight.position.y = 0.5;
+	pointLight.position.x = game.player.position[0] - ((game.fieldSize - 1)) / 2;
+	pointLight.position.z = game.player.position[1] - ((game.fieldSize - 1)) / 2;
+
+	return pointLight;
 }
 
 function getPlayer() {
